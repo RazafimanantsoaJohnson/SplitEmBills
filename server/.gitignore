@@ -1,2 +1,5 @@
 splitem.db
 .env
+.gitignore
+testAssets/
+main_test.go
