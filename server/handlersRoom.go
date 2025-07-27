@@ -25,7 +25,7 @@ type billItem struct {
 
 type paymentRoom struct {
 	Id        string `json:"id"`
-	CreatedBy string `json:"created_by"`
+	CreatedBy string `json:"createdBy"`
 	Data      []billItem
 }
 

@@ -11,7 +11,7 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users(id, created_on, updated_at, username, balance)
-VALUES (?, DATETIME('now', 'localtime'), DATETIME('now','localtime'), ?, 50000.0) RETURNING id, created_on, updated_at, username, balance
+VALUES (?, DATETIME('now', 'localtime'), DATETIME('now','localtime'), ?, 50000.0) RETURNING id, created_on, updated_at, username, balance, user_token
 `
 
 type CreateUserParams struct {
@@ -28,6 +28,25 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.Username,
 		&i.Balance,
+		&i.UserToken,
+	)
+	return i, err
+}
+
+const getUser = `-- name: GetUser :one
+SELECT id, created_on, updated_at, username, balance, user_token FROM users WHERE id=? LIMIT 1
+`
+
+func (q *Queries) GetUser(ctx context.Context, id interface{}) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedOn,
+		&i.UpdatedAt,
+		&i.Username,
+		&i.Balance,
+		&i.UserToken,
 	)
 	return i, err
 }

@@ -17,6 +17,7 @@ type Payment struct {
 	RoomID          interface{}
 	ItemDescription sql.NullString
 	Amount          float64
+	PaymentStatus   sql.NullString
 }
 
 type PaymentRoom struct {
@@ -33,4 +34,5 @@ type User struct {
 	UpdatedAt time.Time
 	Username  string
 	Balance   sql.NullInt64
+	UserToken sql.NullString
 }

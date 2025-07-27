@@ -5,4 +5,6 @@ VALUES(?, DATETIME('now','localtime'), DATETIME('now','localtime'), ?, ?) RETURN
 -- name: GetAllPaymentRooms :many
 SELECT * FROM payment_rooms;
 
+-- name: GetRoomCreator :one
+SELECT * FROM users WHERE users.id= (SELECT created_by FROM payment_rooms WHERE payment_rooms.id=? LIMIT 1) LIMIT 1;
 

@@ -24,6 +24,7 @@ type config struct {
 func main() {
 	godotenv.Load(".env")
 	dbPath := os.Getenv("DB")
+	port := os.Getenv("PORT")
 	fb, err := initializeFirebaseApp()
 	if err != nil {
 		log.Fatalf("unable to connect to firebase %v", err)
@@ -43,14 +44,15 @@ func main() {
 
 	mux.HandleFunc("GET /users", cfg.handleCreateUser)
 	mux.HandleFunc("POST /rooms", cfg.handlerCreatePaymentRoom)
+	mux.HandleFunc("POST /payments", cfg.handleCreatePayment)
 	mux.HandleFunc("GET /hello", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("hello johnson")
 	})
 	server := http.Server{
-		Addr:    ":8000",
+		Addr:    ":" + port,
 		Handler: mux,
 	}
-	fmt.Println("Listening to port 8000")
+	fmt.Println("Listening to port ", port)
 	server.ListenAndServe()
 }
 

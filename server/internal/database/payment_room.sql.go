@@ -66,3 +66,21 @@ func (q *Queries) GetAllPaymentRooms(ctx context.Context) ([]PaymentRoom, error)
 	}
 	return items, nil
 }
+
+const getRoomCreator = `-- name: GetRoomCreator :one
+SELECT id, created_on, updated_at, username, balance, user_token FROM users WHERE users.id= (SELECT created_by FROM payment_rooms WHERE payment_rooms.id=? LIMIT 1) LIMIT 1
+`
+
+func (q *Queries) GetRoomCreator(ctx context.Context, id interface{}) (User, error) {
+	row := q.db.QueryRowContext(ctx, getRoomCreator, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedOn,
+		&i.UpdatedAt,
+		&i.Username,
+		&i.Balance,
+		&i.UserToken,
+	)
+	return i, err
+}

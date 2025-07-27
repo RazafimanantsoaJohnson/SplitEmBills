@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"image"
 	"image/color"
@@ -25,13 +26,28 @@ func initializeFirebaseApp() (*firebase.App, error) {
 	return app, nil
 }
 
-func (cfg *config) sendFirebaseMessage(token []string, message map[string]string) error {
-	fbMessage := &messaging.MulticastMessage{Data: message, Tokens: token}
-	_, err := cfg.fbMessaging.SendEachForMulticast(context.Background(), fbMessage)
+func (cfg *config) sendFirebaseMessage(token string, message map[string]string) error {
+	fbMessage := &messaging.Message{Data: message, Token: token}
+	_, err := cfg.fbMessaging.Send(context.Background(), fbMessage)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func unmarshallRequestBody[T interface{}](r *http.Request, w http.ResponseWriter) (T, error) {
+	var result T
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		returnAnError(w, 500, "server unable to parse request body", err)
+		return result, nil
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		returnAnError(w, 500, "server unable to parse request body", err)
+		return result, nil
+	}
+	return result, nil
 }
 
 func returnAnError(w http.ResponseWriter, errorCode int, message string, err error) {
