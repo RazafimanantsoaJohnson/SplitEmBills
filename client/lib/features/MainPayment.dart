@@ -19,7 +19,6 @@ class MainPaymentPage extends StatefulWidget {
 class _MainPaymentPageState extends State<MainPaymentPage> {
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     FirebaseMessaging.onMessage.listen(handleNewMessage);
   }

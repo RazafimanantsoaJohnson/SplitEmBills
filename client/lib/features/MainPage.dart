@@ -1,5 +1,4 @@
 import "package:client/features/MainPayment.dart";
-import "package:firebase_messaging/firebase_messaging.dart";
 import "package:flutter/material.dart";
 
 class MainPage extends StatelessWidget {
@@ -26,7 +25,9 @@ class MainPage extends StatelessWidget {
                       Container(
                         width: 48,
                         height: 48,
-                        child: FloatingActionButton(onPressed: (){},
+                        child: FloatingActionButton(onPressed: (){
+                          Navigator.pushNamed(context, "/mainPayment",arguments: MainPaymentPageArgs("5b0dcd4b-253a-4a8c-833b-315d366143af"));
+                        },
                             child: Icon(Icons.menu)
                         ) ,
                       ),
@@ -55,10 +56,8 @@ class MainPage extends StatelessWidget {
                         width: 320,
                         child: FloatingActionButton.extended(
                           onPressed: (){
-                            // Navigator.pushNamed(context, '/scanqr');
-                            Navigator.pushNamed(context, "/mainPayment",arguments: MainPaymentPageArgs("2bdd9151-6b1b-4ec3-ab5b-19bdcb117b2f"));
-                            print("we want to scan a qr");
-                          },
+                            Navigator.pushNamed(context, '/scanqr');
+                            },
                           label: Text("Scan a Qr"),
                           icon: Image.asset("assets/icons/qr_code_scanner.png"),
                         ),
