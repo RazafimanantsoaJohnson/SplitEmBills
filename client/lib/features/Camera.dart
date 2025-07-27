@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:client/features/MainPayment.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'dart:convert';
 
 
 class ScanABillPage extends StatefulWidget {
@@ -17,7 +19,7 @@ class ScanABillPage extends StatefulWidget {
 class _ScanABillPageState extends State<ScanABillPage> {
   late List<CameraDescription> _cameras;
   late CameraController controller;
-  String newImage= "/imaginaryPath/0";
+  String newImage= "";
   final backendApi= "https://ce468dd56af2.ngrok-free.app/rooms";
 
   @override
@@ -50,10 +52,13 @@ class _ScanABillPageState extends State<ScanABillPage> {
 
   Future<void> sendPicture() async {
     var request= http.MultipartRequest("POST", Uri.parse(backendApi));
-    request.files.add(await http.MultipartFile.fromPath('bill', newImage, contentType: MediaType('image','jpeg')));
+    request.files.add(await http.MultipartFile.fromPath('bill', newImage, contentType: MediaType('image','png')));
     var response= await request.send();
     if (response.statusCode< 299){
-      Navigator.pushNamed(context, "/mainPayment");
+      String responseBody= await response.stream.bytesToString();
+      Map<String, dynamic> jsonResponse= jsonDecode(responseBody);
+      print("=====================Response BODYYY: $responseBody");
+      Navigator.pushNamed(context, "/mainPayment", arguments: MainPaymentPageArgs(jsonResponse["id"]));
     }else{
       print('File upload unsuccessful: ${response.statusCode}');
     }
@@ -72,7 +77,6 @@ class _ScanABillPageState extends State<ScanABillPage> {
         height: 500,
         child:  CameraPreview(controller)
     );
-    print("==============Value of newImage:   $newImage");
     if (!controller.value.isInitialized){
       return Container();
     }
@@ -82,7 +86,7 @@ class _ScanABillPageState extends State<ScanABillPage> {
           mainAxisSize: MainAxisSize.max,
 
           children: [
-            newImage == "/imaginaryPath/0"? cameraViewer : SizedBox(
+            newImage == ""? cameraViewer : SizedBox(
                 width: 500,
                 height: 500,
                 child: Image.file(
@@ -96,7 +100,7 @@ class _ScanABillPageState extends State<ScanABillPage> {
               child: Center(
                 child: FloatingActionButton(
                     onPressed: () async {
-                      if (newImage=="/imaginaryPath/0"){
+                      if (newImage==""){
                         final XFile image= await  controller.takePicture();
 
                         setState((){
@@ -107,7 +111,7 @@ class _ScanABillPageState extends State<ScanABillPage> {
                       sendPicture();
                     },
                     child: Icon(
-                        newImage=="/imaginaryPath/0" ?Icons.circle: Icons.send
+                        newImage=="" ?Icons.circle: Icons.send
                     )
                 ),
               )

@@ -3,3 +3,4 @@ splitem.db
 .gitignore
 testAssets/
 main_test.go
+firebase_config.json

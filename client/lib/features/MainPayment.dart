@@ -1,11 +1,36 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-class MainPaymentPage extends StatelessWidget {
+class MainPaymentPageArgs {
+  final String roomId;
+
+  MainPaymentPageArgs(this.roomId);
+}
+
+class MainPaymentPage extends StatefulWidget {
   const MainPaymentPage({super.key});
 
   @override
+  State<MainPaymentPage> createState() => _MainPaymentPageState();
+}
+
+class _MainPaymentPageState extends State<MainPaymentPage> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    FirebaseMessaging.onMessage.listen(handleNewMessage);
+  }
+
+  void handleNewMessage(RemoteMessage message){
+    print("${message.data}");
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final args= ModalRoute.of(context)!.settings.arguments as MainPaymentPageArgs;
     return Scaffold(
       body: Container(
           padding: EdgeInsets.only(top: 16.0),
@@ -67,7 +92,7 @@ class MainPaymentPage extends StatelessWidget {
                 ],
               ),
               QrImageView(
-                data: '5555555552136',
+                data: args.roomId,
                 version: QrVersions.auto,
                 size: 160.0,
               )
@@ -78,6 +103,7 @@ class MainPaymentPage extends StatelessWidget {
     );
   }
 }
+
 
 
 class DraggableSheet extends StatefulWidget {
