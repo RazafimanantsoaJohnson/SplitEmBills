@@ -1,9 +1,9 @@
 import 'package:client/features/Camera.dart';
 import 'package:client/features/MainPayment.dart';
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
 import 'package:client/features/MainPage.dart';
-import 'package:http/http.dart' as http;
+import 'package:client/features/QrScanner.dart';
+
 
 
 void main() async{
@@ -41,8 +41,9 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
           '/': (context) => const MainPage(),
-        '/camera': (context) => const CameraPage(),
-        '/mainPayment': (context) => const MainPaymentPage()
+        '/camera': (context) => const ScanABillPage(),
+        '/mainPayment': (context) => const MainPaymentPage(),
+        '/scanqr': (context) => const QrScannerPage(),
       }
     );
   }

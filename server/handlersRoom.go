@@ -41,6 +41,7 @@ func (cfg *config) handlerCreatePaymentRoom(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	fileData, fileHeader, err := r.FormFile("bill")
+
 	if err != nil {
 		returnAnError(w, 500, "the server was enable to parse the file", err)
 		return
@@ -53,6 +54,7 @@ func (cfg *config) handlerCreatePaymentRoom(w http.ResponseWriter, r *http.Reque
 		returnAnError(w, 500, "the server was enable to parse the attached file type", err)
 		return
 	}
+	fmt.Println(mimeHeader)
 	fileType := strings.Split(mimeHeader, "/")[0]
 	fileExt := strings.Split(mimeHeader, "/")[1]
 	if fileType != "image" || (fileExt != "jpeg" && fileExt != "png") {
@@ -101,6 +103,7 @@ func (cfg *config) handlerCreatePaymentRoom(w http.ResponseWriter, r *http.Reque
 		ID: uuid.New(),
 		RawJsonData: sql.NullString{
 			String: string(jsonData),
+			Valid:  true,
 		},
 		CreatedBy: testUser,
 	})
@@ -156,7 +159,26 @@ func transformImage(file io.Reader, threshold uint8) (image.Image, error) { //to
 			*/
 		}
 	}
-	return grayImage, nil
+
+	return checkAndChangeImageOrientation(grayImage), nil
+}
+
+func checkAndChangeImageOrientation(img *image.Gray) *image.Gray {
+	bounds := img.Bounds()
+	if bounds.Max.X > bounds.Max.Y {
+		x0 := bounds.Min.X
+		y0 := bounds.Min.Y
+		x1 := bounds.Max.X
+		y1 := bounds.Max.Y
+		rotatedRightImg := image.NewGray(image.Rect(y0, x0, y1, x1))
+		for x := x0; x < x1; x++ {
+			for y := y0; y < y1; y++ {
+				rotatedRightImg.SetGray(y1-y, x, img.GrayAt(x, y))
+			}
+		}
+		return rotatedRightImg
+	}
+	return img
 }
 
 func findItems(extractedData []string) []billItem {

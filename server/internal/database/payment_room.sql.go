@@ -33,3 +33,36 @@ func (q *Queries) CreatePaymentRoom(ctx context.Context, arg CreatePaymentRoomPa
 	)
 	return i, err
 }
+
+const getAllPaymentRooms = `-- name: GetAllPaymentRooms :many
+SELECT id, created_on, updated_at, created_by, raw_json_data FROM payment_rooms
+`
+
+func (q *Queries) GetAllPaymentRooms(ctx context.Context) ([]PaymentRoom, error) {
+	rows, err := q.db.QueryContext(ctx, getAllPaymentRooms)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PaymentRoom
+	for rows.Next() {
+		var i PaymentRoom
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedOn,
+			&i.UpdatedAt,
+			&i.CreatedBy,
+			&i.RawJsonData,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

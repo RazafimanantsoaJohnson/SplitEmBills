@@ -53,7 +53,7 @@ class MainPage extends StatelessWidget {
                         width: 320,
                         child: FloatingActionButton.extended(
                           onPressed: (){
-                            Navigator.pushNamed(context, '/mainPayment');
+                            Navigator.pushNamed(context, '/scanqr');
                             print("we want to scan a qr");
                           },
                           label: Text("Scan a Qr"),

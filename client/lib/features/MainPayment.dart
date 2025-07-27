@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class MainPaymentPage extends StatelessWidget {
   const MainPaymentPage({super.key});
@@ -65,11 +66,11 @@ class MainPaymentPage extends StatelessWidget {
                   // DraggableSheet()
                 ],
               ),
-              SizedBox(
-                  height: 160,
-                  width: 160,
-                  child: Image.asset("assets/images/QR_Code_Example.svg.png")
-              ),
+              QrImageView(
+                data: '5555555552136',
+                version: QrVersions.auto,
+                size: 160.0,
+              )
               // DraggableSheet()
             ],
           )
