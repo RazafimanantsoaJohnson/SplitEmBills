@@ -31,6 +31,7 @@ type paymentRoom struct {
 
 func (cfg *config) handlerCreatePaymentRoom(w http.ResponseWriter, r *http.Request) {
 	maxSize := 15 << 20
+	userId := r.PathValue("userId")
 	err := r.ParseMultipartForm(int64(maxSize))
 	if err != nil {
 		returnAnError(w, 400, "unable to parse the received file", err)
@@ -88,7 +89,6 @@ func (cfg *config) handlerCreatePaymentRoom(w http.ResponseWriter, r *http.Reque
 	//searching for 2 dec place characters
 	allItems := findItems(splittedData)
 
-	testUser, err := uuid.Parse("4c70caa7-b3ab-45c5-9ae2-f391de428aeb")
 	jsonData, err := json.Marshal(&allItems)
 	if err != nil {
 		returnAnError(w, 500, "something went wrong when processing the data", err)
@@ -101,7 +101,7 @@ func (cfg *config) handlerCreatePaymentRoom(w http.ResponseWriter, r *http.Reque
 			String: string(jsonData),
 			Valid:  true,
 		},
-		CreatedBy: testUser,
+		CreatedBy: userId,
 	})
 	if err != nil {
 		returnAnError(w, 500, "an error happened when trying to create the new payment", err)

@@ -5,7 +5,10 @@ import 'package:client/features/MainPayment.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:provider/provider.dart';
 import 'dart:convert';
+
+import '../providers/userProvider.dart';
 
 
 class ScanABillPage extends StatefulWidget {
@@ -51,8 +54,10 @@ class _ScanABillPageState extends State<ScanABillPage> {
   }
 
   Future<void> sendPicture() async {
-    var request= http.MultipartRequest("POST", Uri.parse(backendApi));
+    var user= Provider.of<GlobalStateProvider>(context,listen:false).user;
+    var request= http.MultipartRequest("POST", Uri.parse("${backendApi}/${user["id"]}"));
     request.files.add(await http.MultipartFile.fromPath('bill', newImage, contentType: MediaType('image','png')));
+
     var response= await request.send();
     if (response.statusCode< 299){
       String responseBody= await response.stream.bytesToString();

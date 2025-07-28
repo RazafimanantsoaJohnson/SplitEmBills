@@ -43,9 +43,9 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /users", cfg.handleSignin)
-	mux.HandleFunc("POST /rooms", cfg.handlerCreatePaymentRoom)
 	mux.HandleFunc("POST /rooms/enter", cfg.handleEnterRoom)
 	mux.HandleFunc("POST /rooms/users", cfg.handleGetUserPaymentInRoom)
+	mux.HandleFunc("POST /rooms/{userId}", cfg.handlerCreatePaymentRoom)
 	mux.HandleFunc("POST /payments", cfg.handleCreatePayment)
 	mux.HandleFunc("POST /payments/process/{paymentId}", cfg.handleProcessPayment)
 
