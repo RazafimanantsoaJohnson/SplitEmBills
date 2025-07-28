@@ -1,10 +1,13 @@
 import 'package:client/features/Camera.dart';
 import 'package:client/features/CoPayerPaymentProcess.dart';
 import 'package:client/features/MainPayment.dart';
+import 'package:client/providers/userProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:client/features/MainPage.dart';
 import 'package:client/features/QrScanner.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'features/SigninPage.dart';
 import 'firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -26,7 +29,9 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return ChangeNotifierProvider(
+      create: (context) => GlobalStateProvider(),
+        child:MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData(
           // This is the theme of your application.
@@ -49,13 +54,14 @@ class MyApp extends StatelessWidget {
         ),
       initialRoute: '/',
       routes: {
-          '/': (context) => const MainPage(),
+          '/': (context) => const SigninPage(),
+          '/mainPage': (context) => const MainPage(),
         '/camera': (context) => const ScanABillPage(),
         '/mainPayment': (context) => const MainPaymentPage(),
         '/copayerPayment': (context) => const CopayerPaymentPage(),
         '/scanqr': (context) => const QrScannerPage(),
       }
-    );
+    ));
   }
 } // MainPaymentPage()
 

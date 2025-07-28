@@ -8,5 +8,5 @@ UPDATE payments SET user_id=?, payment_status= "ASSIGNED" WHERE id=?;
 -- name: ProcessPayment :exec
 UPDATE payments SET updated_at= DATETIME('now','localtime'), payment_status="PROCESSED" WHERE id=?;
 
--- name: GetAllUserPaymentInRoom :exec
+-- name: GetAllUserPaymentInRoom :many
 SELECT * FROM payments WHERE user_id=? AND room_id =? ;

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -41,6 +42,7 @@ func (cfg *config) handleEnterRoom(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	fmt.Println(newPayment)
 
 	requester, err := cfg.db.GetUser(context.Background(), newPayment.UserId)
 	if err != nil {
@@ -116,6 +118,7 @@ func (cfg *config) handleCreatePayment(w http.ResponseWriter, r *http.Request) {
 		"itemDescription": createdPayment.ItemDescription.String,
 		"amount":          strconv.FormatFloat(createdPayment.Amount, 'f', -1, 64),
 		"roomId":          createdPayment.RoomID.(string),
+		"id":              createdPayment.ID.(string),
 	}
 	err = cfg.sendFirebaseMessage(assignedUser.UserToken.String, assignedPaymentMessage) // should handle this error
 	if err != nil {
@@ -132,4 +135,46 @@ func (cfg *config) handleProcessPayment(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		returnAnError(w, 400, "unable to process the payment", err)
 	}
+}
+
+func (cfg *config) handleGetUserPaymentInRoom(w http.ResponseWriter, r *http.Request) {
+	type userIdRomm struct {
+		UserId string `json:"userId"`
+		RoomId string `json:"roomId"`
+	}
+	type paymentInRoom struct {
+		Id          string  `json:"id"`
+		Description string  `json:"description"`
+		Amount      float64 `json:"amount"`
+	}
+	result := []paymentInRoom{}
+	body, err := unmarshallRequestBody[userIdRomm](r, w)
+	if err != nil {
+		log.Printf("%v", err)
+		return
+	}
+
+	dbResponse, err := cfg.db.GetAllUserPaymentInRoom(context.Background(), database.GetAllUserPaymentInRoomParams{
+		UserID: body.UserId,
+		RoomID: body.RoomId,
+	})
+	if err != nil {
+		returnAnError(w, 400, "error when resolving request", err)
+		return
+	}
+
+	for i := 0; i < len(dbResponse); i++ {
+		result = append(result, paymentInRoom{
+			Id:          dbResponse[i].ID.(string),
+			Description: dbResponse[i].ItemDescription.String,
+			Amount:      dbResponse[i].Amount,
+		})
+	}
+	response, err := json.Marshal(&result)
+	if err != nil {
+		returnAnError(w, 400, "error when resolving request", err)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(response)
 }

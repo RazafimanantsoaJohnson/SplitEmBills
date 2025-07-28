@@ -1,17 +1,28 @@
 import 'dart:convert';
 
-import 'package:firebase_core/firebase_core.dart';
+import 'package:client/providers/itemsProvider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 
 class MainPaymentPageArgs {
   final String roomId;
+  final List<Item> items;
 
-  MainPaymentPageArgs(this.roomId);
+  MainPaymentPageArgs(this.roomId, this.items);
+  factory MainPaymentPageArgs.fromJson(String roomId,List<dynamic> json){
+
+    return MainPaymentPageArgs(
+      roomId,
+      json.map((e)=>Item(description: e["description"], amount: e["amount"].toDouble())).toList()
+    );
+  }
 }
+
+
 
 class MainPaymentPage extends StatefulWidget {
   const MainPaymentPage({super.key});
@@ -22,7 +33,9 @@ class MainPaymentPage extends StatefulWidget {
 
 class _MainPaymentPageState extends State<MainPaymentPage> with SingleTickerProviderStateMixin {
   List<Widget> copayers= [];
+  List<dynamic> copayersData=[];
   bool isANewMessageReceived= false;
+  int pageToShow= 1;  // 1-3 (payment, assignment, choice of items (pre-assignment))
 
   // TODO: at initState -> go fetch the users already in the room.
 
@@ -34,6 +47,10 @@ class _MainPaymentPageState extends State<MainPaymentPage> with SingleTickerProv
 
   void handleNewMessage(RemoteMessage message){
     print("${message.data}");
+    copayersData.add({
+      "username": message.data["username"],
+      "userId": message.data["userId"]
+    });
     copayers.add(
       Container(
         color: Colors.blueGrey.shade100,
@@ -52,6 +69,12 @@ class _MainPaymentPageState extends State<MainPaymentPage> with SingleTickerProv
     });
   }
 
+  Widget showMainWidget( String roomId,List<Item> items, List<dynamic> copayersData){
+    if(pageToShow== 2){
+      return UsersInRoom(roomId: roomId ,users: copayersData);
+    }
+    return ItemList(items: items);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +82,14 @@ class _MainPaymentPageState extends State<MainPaymentPage> with SingleTickerProv
     final screenWidth= MediaQuery.of(context).size.width;
     final screenHeight= MediaQuery.of(context).size.height;
     final MenuController menuController= MenuController();
-    int pageToShow= 1;  // 1-3 (payment, assignment, choice of items (pre-assignment))
+    double totalAmount= 0.0;
+    for (int i=0; i<args.items.length; i++){
+      totalAmount+= args.items[i].amount;
+    }
 
-    return Scaffold(
+    return ChangeNotifierProvider(
+      create: (context)=>ItemsProvider(),
+        child:Scaffold(
       appBar: AppBar(
           title: Text(
               "Split payments",
@@ -78,81 +106,86 @@ class _MainPaymentPageState extends State<MainPaymentPage> with SingleTickerProv
             height: double.infinity,
             child: Stack(
               children: [
-                Column(
-                spacing: 40,
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Column(
-                    spacing: 8.0,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Payment Completion",
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey.shade800,
-                        ),
-                      ),
-                      Stack(
-                          children: [
-                            SizedBox(
-                                width: 176,
-                                height: 176,
-                                child: CircularProgressIndicator(
-                                  color: Colors.blueGrey.shade800,
-                                  backgroundColor: Colors.blueGrey.shade50,
-                                  strokeWidth: 8.0,
-                                  value: 0.3,
-                                )
-                            ),
-                            SizedBox(
-                                width: 176,
-                                height: 176,
-                                child: Center(
-                                    child: Text(
-                                      "30 %",
-                                      style: TextStyle(
-                                        color: Colors.blueGrey.shade800,
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                )
-                            )
-
-                          ]
-                      ),
-                      Text(
-                        "Total Amount:\t 500\$",
-                        style: TextStyle(
+                Padding(
+                  padding:EdgeInsets.symmetric(horizontal: 80.0),
+                  child: Column(
+                  spacing: 40,
+                  mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Column(
+                      spacing: 16.0,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        /*
+                        Text(
+                          "Payment Completion",
+                          style: TextStyle(
                             fontSize: 16.0,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blueGrey.shade800
+                            color: Colors.blueGrey.shade800,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  QrImageView(
-                    data: args.roomId,
-                    version: QrVersions.auto,
-                    size: 160.0,
-                  ),
-                  Container(
-                    height: 160.0,
-                    width: 240,
-                    child: SingleChildScrollView(
+                        Stack(
+                            children: [
+                              SizedBox(
+                                  width: 176,
+                                  height: 176,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.blueGrey.shade800,
+                                    backgroundColor: Colors.blueGrey.shade50,
+                                    strokeWidth: 8.0,
+                                    value: 0.3,
+                                  )
+                              ),
+                              SizedBox(
+                                  width: 176,
+                                  height: 176,
+                                  child: Center(
+                                      child: Text(
+                                        "30 %",
+                                        style: TextStyle(
+                                          color: Colors.blueGrey.shade800,
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                  )
+                              )
 
-                      child: Column(
-                        mainAxisSize: MainAxisSize.max,
-                        children: copayers
-                      ),
-                    )
-                  ),
-                  // DraggableSheet()
-                ],
-              ),
+                            ]
+                        ),
+                         */
+                        Text(
+                          "Total Amount:\t ${totalAmount}\$",
+                          style: TextStyle(
+                              fontSize: 24.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueGrey.shade800
+                          ),
+                        ),
+                      ],
+                    ),
+                    QrImageView(
+                      data: args.roomId,
+                      version: QrVersions.auto,
+                      size: 160.0,
+                    ),
+                    Container(
+                      height: 240.0,
+                      width: 240,
+                      child: SingleChildScrollView(
+
+                        child: Column(
+                          mainAxisSize: MainAxisSize.max,
+                          children: copayers
+                        ),
+                      )
+                    ),
+                    // DraggableSheet()
+                  ],
+                                ),
+                ),
                 DraggableScrollableSheet(
                   initialChildSize: 0.12,
                   maxChildSize: 0.7,
@@ -218,9 +251,8 @@ class _MainPaymentPageState extends State<MainPaymentPage> with SingleTickerProv
 
 
                                       ),
-                                    //pageToShow==1? ItemList() :
-                                    UsersInRoom(),
-
+                                    showMainWidget(args.roomId ,args.items, copayersData),
+                                    // UsersInRoom(),
                                   ]
                                 )
                               ),
@@ -254,7 +286,11 @@ class _MainPaymentPageState extends State<MainPaymentPage> with SingleTickerProv
                                 onPressed: (){
                                   print("go on assignment");
                                   setState((){
-                                    pageToShow=2;
+                                    if(pageToShow==1){
+                                      pageToShow=2;
+                                    }else{
+                                      pageToShow=1;
+                                    }
                                   });
                                 },
                                 child: Text("Assign to others"),
@@ -270,8 +306,10 @@ class _MainPaymentPageState extends State<MainPaymentPage> with SingleTickerProv
             ),
           )
       ),
-    );
+    ));
   }
+
+
 }
 
 class Item{
@@ -290,40 +328,48 @@ class Item{
 }
 
 class ItemList extends StatefulWidget {
-  const ItemList({super.key});
+  final List<Item> items;
+
+  const ItemList({super.key, required this.items});
 
   @override
   State<ItemList> createState() => _ItemListState();
 }
 
 class _ItemListState extends State<ItemList> {
-  final List<Item> items= [
-    Item(description: "Item 1", amount: 1.2),
-    Item(description: "Item 1", amount: 1.2),
-    Item(description: "Item 1", amount: 1.2)
-  ];
-  void showNumberOfChecked(){
+
+  void showNumberOfChecked(List<Item> items){
     final List<Item> checkedItems= items.where((item)=>item.isChecked).toList();
     print(checkedItems.length);
   }
+
+  void showItems(List<Item> items){
+    print("=============================ITEMS:::${items}");
+  }
   @override
   Widget build(BuildContext context) {
-    List<Item> _items= items;
+    final itemProvider= Provider.of<ItemsProvider>(context, listen: false);
+    if (itemProvider.items.length==0){
+      itemProvider.initialize(widget.items);
+    }
+
+    showItems(itemProvider.items);
     List<Widget> itemWidgets= [];
-    for(int i=0; i<_items.length; i++){
+    for(int i=0; i<itemProvider.items.length; i++){
       itemWidgets.add(Card(
           margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
           elevation: 2.0,
           child: CheckboxListTile(
-            value: _items[i].isChecked,
+            value: itemProvider.items[i].isChecked,
             onChanged: (bool? newValue){
               setState((){
-                _items[i].isChecked= newValue ?? false;
+                itemProvider.items[i].isChecked= newValue ?? false;
+                itemProvider.updateValue(i, newValue ?? false);
               });
-              showNumberOfChecked();
+              showNumberOfChecked(itemProvider.items);
             },
-            title: Text(_items[i].description),
-            subtitle: Text("${_items[i].amount}"),
+            title: Text(itemProvider.items[i].description),
+            subtitle: Text("${itemProvider.items[i].amount}"),
             controlAffinity: ListTileControlAffinity.leading,
           )
       )
@@ -334,38 +380,56 @@ class _ItemListState extends State<ItemList> {
 }
 
 class UsersInRoom extends StatefulWidget {
-  const UsersInRoom({super.key});
+  final List<dynamic> users;
+  final String roomId;
+  const UsersInRoom({super.key, required this.users,required this.roomId });
 
   @override
   State<UsersInRoom> createState() => _UsersInRoomState();
 }
 
 class _UsersInRoomState extends State<UsersInRoom> {
-  List<Map<String,dynamic>> allUsersInRoom= [
-    {"username": "JOJO legrand"},
-    {"username": "le petit baba"}
-  ];
 
   String roomApi= "https://ce468dd56af2.ngrok-free.app/rooms";
-  String roomId= "";  // TODO: should change into a state we receive from parents
+  String assignmentApi= "https://ce468dd56af2.ngrok-free.app/payments";
 
   @override
   void initState() {
     super.initState();
-    getAllUsersInRoom(roomApi, roomId);
+    // getAllUsersInRoom(roomApi, roomId);
   }
 
-  Future<void> getAllUsersInRoom(String roomApi,String roomId) async{
-      final response= await http.get(Uri.parse("$roomApi/$roomId"));
-      if (response.statusCode>299){
-        print("error when trying to fetch the resource");
-        return;
-      }
-      allUsersInRoom= jsonDecode(response.body);
+  // Future<void> getAllUsersInRoom(String roomApi,String roomId) async{
+  //     final response= await http.get(Uri.parse("$roomApi/$roomId"));
+  //     if (response.statusCode>299){
+  //       print("error when trying to fetch the resource");
+  //       return;
+  //     }
+  //     allUsersInRoom= jsonDecode(response.body);
+  // }
+
+  Future<bool> assignToUsers(String assignmentUrl, String roomId ,String userId ,List<Item> items) async{
+    bool result= true;
+    print(items);
+    for(int i=0;i<items.length;i++){
+      print("sending:  ${items[i]}");
+      var data= {
+        "userId": userId, "roomId": roomId, "itemDescription":items[i].description, "amount":items[i].amount
+      };
+      var response= await http.post(Uri.parse(assignmentUrl), headers: {"Content-Type":"application/json"},
+          body: jsonEncode(data));
+      result= response.statusCode<299 && result;
+    }
+    return result;
   }
 
   @override
   Widget build(BuildContext context) {
+    final allUsersInRoom= widget.users;
+    final items= context.watch<ItemsProvider>().items;
+    final itemProvider= Provider.of<ItemsProvider>(context,listen: false);
+    final roomId= widget.roomId;
+
     return Container(
       width: double.infinity,
       child: SingleChildScrollView(
@@ -385,17 +449,21 @@ class _UsersInRoomState extends State<UsersInRoom> {
                       content: Text("Confirming this action will assign the cost to ${user["username"]}"),
                       actions:[
                         GestureDetector(
-                            onTap: (){
+                            onTap: ()async {
                               //TODO: send the request
+                              //var checkedItems= items.where((i)=> i.isChecked).toList();
                               Navigator.of(context).pop();
-                              print("assigned to x");
                             },
                             child: Text("Cancel")
                         ),
                         SizedBox(width:24),
                         GestureDetector(
-                          onTap: (){
+                          onTap: ()async{
                             //TODO: send the request
+                            var checkedItems= items.where((i)=> i.isChecked).toList();
+                            await assignToUsers(assignmentApi, roomId, user["userId"], checkedItems);
+                            itemProvider.removeCheckedValue();
+
                             Navigator.of(context).pop();
                             print("assigned to x");
 

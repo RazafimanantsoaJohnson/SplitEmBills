@@ -59,7 +59,7 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (P
 	return i, err
 }
 
-const getAllUserPaymentInRoom = `-- name: GetAllUserPaymentInRoom :exec
+const getAllUserPaymentInRoom = `-- name: GetAllUserPaymentInRoom :many
 SELECT id, created_on, updated_at, user_id, room_id, item_description, amount, payment_status FROM payments WHERE user_id=? AND room_id =?
 `
 
@@ -68,9 +68,36 @@ type GetAllUserPaymentInRoomParams struct {
 	RoomID interface{}
 }
 
-func (q *Queries) GetAllUserPaymentInRoom(ctx context.Context, arg GetAllUserPaymentInRoomParams) error {
-	_, err := q.db.ExecContext(ctx, getAllUserPaymentInRoom, arg.UserID, arg.RoomID)
-	return err
+func (q *Queries) GetAllUserPaymentInRoom(ctx context.Context, arg GetAllUserPaymentInRoomParams) ([]Payment, error) {
+	rows, err := q.db.QueryContext(ctx, getAllUserPaymentInRoom, arg.UserID, arg.RoomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Payment
+	for rows.Next() {
+		var i Payment
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedOn,
+			&i.UpdatedAt,
+			&i.UserID,
+			&i.RoomID,
+			&i.ItemDescription,
+			&i.Amount,
+			&i.PaymentStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const processPayment = `-- name: ProcessPayment :exec

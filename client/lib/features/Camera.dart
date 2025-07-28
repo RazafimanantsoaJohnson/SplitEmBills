@@ -57,8 +57,9 @@ class _ScanABillPageState extends State<ScanABillPage> {
     if (response.statusCode< 299){
       String responseBody= await response.stream.bytesToString();
       Map<String, dynamic> jsonResponse= jsonDecode(responseBody);
+      List<dynamic> data= jsonResponse["Data"];
       print("=====================Response BODYYY: $responseBody");
-      Navigator.pushNamed(context, "/mainPayment", arguments: MainPaymentPageArgs(jsonResponse["id"]));
+      Navigator.pushNamed(context, "/mainPayment", arguments: MainPaymentPageArgs.fromJson(jsonResponse["id"], data));
     }else{
       print('File upload unsuccessful: ${response.statusCode}');
     }

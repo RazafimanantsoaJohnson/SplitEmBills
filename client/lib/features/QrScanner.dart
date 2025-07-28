@@ -1,8 +1,11 @@
+import 'package:client/features/CoPayerPaymentProcess.dart';
 import 'package:client/features/MainPayment.dart';
+import 'package:client/providers/userProvider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class QrScannerPage extends StatefulWidget {
   const QrScannerPage({super.key});
@@ -12,14 +15,14 @@ class QrScannerPage extends StatefulWidget {
 }
 
 class _QrScannerPageState extends State<QrScannerPage> {
-  final backendApi= "https://ce468dd56af2.ngrok-free.app/payments";
+  final backendApi= "https://ce468dd56af2.ngrok-free.app/rooms/enter";
   bool isPaymentCreated= false;
   bool isProcessing= false;
 
-  Future<bool> createPayment(String apiUrl,String roomId) async{
+  Future<bool> createPayment(String apiUrl, userId ,String roomId) async{
     // TODO: remove all hard coding on user_ids
     var client= http.Client();
-    Map<String,String> data= {"userId":"4c70caa7-b3ab-45c5-9ae2-f391de428aeb", "roomId": roomId};
+    Map<String,String> data= {"userId":userId, "roomId": roomId};
     var response= await client.post(Uri.parse(apiUrl),
       headers:{"Content-Type":"application/json"},
       body: jsonEncode(data)
@@ -32,6 +35,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
 
   @override
   Widget build(BuildContext context) {
+    var user= context.watch<GlobalStateProvider>().user;
     return MobileScanner(
       onDetect: (result) async{
         print(result.barcodes.first.rawValue);
@@ -41,10 +45,10 @@ class _QrScannerPageState extends State<QrScannerPage> {
         if (!isPaymentCreated){
           print(isPaymentCreated);
           if (qrData != null){
-            isPaymentCreated= await createPayment( backendApi ,qrData);
+            isPaymentCreated= await createPayment( backendApi ,user["id"] ,qrData);
             if (!isPaymentCreated) return;
             isProcessing= false;
-            Navigator.pushNamed(context, "/copayerPayment",arguments: MainPaymentPageArgs(qrData));
+            Navigator.pushNamed(context, "/copayerPayment",arguments: CopayerPaymentArgs(qrData));
           }
         }
       }

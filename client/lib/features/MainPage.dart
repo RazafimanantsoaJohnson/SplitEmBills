@@ -1,3 +1,5 @@
+import "dart:convert";
+
 import "package:client/features/MainPayment.dart";
 import "package:flutter/material.dart";
 
@@ -8,34 +10,12 @@ class MainPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+          padding: EdgeInsets.symmetric(horizontal: 40.0, vertical: 16.0),
           child:  Column(
               mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children:[
-                      Container(
-                        width: 48.0,
-                        height: 48.0,
-                        child: CircleAvatar(
-                            child: Icon(Icons.man)
-                        ),
-                      ),
-                      Container(
-                        width: 48,
-                        height: 48,
-                        child: FloatingActionButton(onPressed: (){
-                          Navigator.pushNamed(context, "/mainPayment",arguments: MainPaymentPageArgs("5b0dcd4b-253a-4a8c-833b-315d366143af"));
-                        },
-                            child: Icon(Icons.menu)
-                        ) ,
-                      ),
-                    ]
-                ),
-                SizedBox(
-                    height: 300
-                ),
                 Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     spacing: 24.0,
