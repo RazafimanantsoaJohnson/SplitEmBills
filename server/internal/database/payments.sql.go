@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
 
 const assignPayment = `-- name: AssignPayment :exec
@@ -24,18 +25,26 @@ func (q *Queries) AssignPayment(ctx context.Context, arg AssignPaymentParams) er
 }
 
 const createPayment = `-- name: CreatePayment :one
-INSERT INTO payments(id, created_on, updated_at, amount ,user_id, room_id, payment_status)
-VALUES (?, DATETIME('now','localtime'), DATETIME('now','localtime'),0.0 , ?, ?, "PENDING" ) RETURNING id, created_on, updated_at, user_id, room_id, item_description, amount, payment_status
+INSERT INTO payments(id, created_on, updated_at,user_id, room_id,  amount , item_description, payment_status)
+VALUES (?, DATETIME('now','localtime'), DATETIME('now','localtime'),?, ?, ?, ?,"PENDING" ) RETURNING id, created_on, updated_at, user_id, room_id, item_description, amount, payment_status
 `
 
 type CreatePaymentParams struct {
-	ID     interface{}
-	UserID interface{}
-	RoomID interface{}
+	ID              interface{}
+	UserID          interface{}
+	RoomID          interface{}
+	Amount          float64
+	ItemDescription sql.NullString
 }
 
 func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (Payment, error) {
-	row := q.db.QueryRowContext(ctx, createPayment, arg.ID, arg.UserID, arg.RoomID)
+	row := q.db.QueryRowContext(ctx, createPayment,
+		arg.ID,
+		arg.UserID,
+		arg.RoomID,
+		arg.Amount,
+		arg.ItemDescription,
+	)
 	var i Payment
 	err := row.Scan(
 		&i.ID,
@@ -50,16 +59,25 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (P
 	return i, err
 }
 
-const processPayment = `-- name: ProcessPayment :exec
-UPDATE payments SET updated_at= DATETIME('now','localtime'), amount=?, payment_status="PROCESSED" WHERE id=?
+const getAllUserPaymentInRoom = `-- name: GetAllUserPaymentInRoom :exec
+SELECT id, created_on, updated_at, user_id, room_id, item_description, amount, payment_status FROM payments WHERE user_id=? AND room_id =?
 `
 
-type ProcessPaymentParams struct {
-	Amount float64
-	ID     interface{}
+type GetAllUserPaymentInRoomParams struct {
+	UserID interface{}
+	RoomID interface{}
 }
 
-func (q *Queries) ProcessPayment(ctx context.Context, arg ProcessPaymentParams) error {
-	_, err := q.db.ExecContext(ctx, processPayment, arg.Amount, arg.ID)
+func (q *Queries) GetAllUserPaymentInRoom(ctx context.Context, arg GetAllUserPaymentInRoomParams) error {
+	_, err := q.db.ExecContext(ctx, getAllUserPaymentInRoom, arg.UserID, arg.RoomID)
+	return err
+}
+
+const processPayment = `-- name: ProcessPayment :exec
+UPDATE payments SET updated_at= DATETIME('now','localtime'), payment_status="PROCESSED" WHERE id=?
+`
+
+func (q *Queries) ProcessPayment(ctx context.Context, id interface{}) error {
+	_, err := q.db.ExecContext(ctx, processPayment, id)
 	return err
 }

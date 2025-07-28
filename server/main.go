@@ -42,12 +42,12 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /users", cfg.handleCreateUser)
+	mux.HandleFunc("POST /users", cfg.handleSignin)
 	mux.HandleFunc("POST /rooms", cfg.handlerCreatePaymentRoom)
+	mux.HandleFunc("POST /rooms/enter", cfg.handleEnterRoom)
 	mux.HandleFunc("POST /payments", cfg.handleCreatePayment)
-	mux.HandleFunc("GET /hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("hello johnson")
-	})
+	mux.HandleFunc("POST /payments/process/{paymentId}", cfg.handleProcessPayment)
+
 	server := http.Server{
 		Addr:    ":" + port,
 		Handler: mux,

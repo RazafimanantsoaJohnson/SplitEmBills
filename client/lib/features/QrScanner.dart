@@ -1,3 +1,4 @@
+import 'package:client/features/MainPayment.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
@@ -12,6 +13,8 @@ class QrScannerPage extends StatefulWidget {
 
 class _QrScannerPageState extends State<QrScannerPage> {
   final backendApi= "https://ce468dd56af2.ngrok-free.app/payments";
+  bool isPaymentCreated= false;
+  bool isProcessing= false;
 
   Future<bool> createPayment(String apiUrl,String roomId) async{
     // TODO: remove all hard coding on user_ids
@@ -32,12 +35,18 @@ class _QrScannerPageState extends State<QrScannerPage> {
     return MobileScanner(
       onDetect: (result) async{
         print(result.barcodes.first.rawValue);
+        if (isProcessing || isPaymentCreated) return;
+        isProcessing= true;
         String? qrData= result.barcodes.first.rawValue;
-        if (qrData != null){
-          await createPayment( backendApi ,qrData);
+        if (!isPaymentCreated){
+          print(isPaymentCreated);
+          if (qrData != null){
+            isPaymentCreated= await createPayment( backendApi ,qrData);
+            if (!isPaymentCreated) return;
+            isProcessing= false;
+            Navigator.pushNamed(context, "/copayerPayment",arguments: MainPaymentPageArgs(qrData));
+          }
         }
-
-        //  Navigator.pushNamed(context, '/mainPayment');
       }
     );
   }

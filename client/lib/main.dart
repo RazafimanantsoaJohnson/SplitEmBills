@@ -1,4 +1,5 @@
 import 'package:client/features/Camera.dart';
+import 'package:client/features/CoPayerPaymentProcess.dart';
 import 'package:client/features/MainPayment.dart';
 import 'package:flutter/material.dart';
 import 'package:client/features/MainPage.dart';
@@ -51,6 +52,7 @@ class MyApp extends StatelessWidget {
           '/': (context) => const MainPage(),
         '/camera': (context) => const ScanABillPage(),
         '/mainPayment': (context) => const MainPaymentPage(),
+        '/copayerPayment': (context) => const CopayerPaymentPage(),
         '/scanqr': (context) => const QrScannerPage(),
       }
     );

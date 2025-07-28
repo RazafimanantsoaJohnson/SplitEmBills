@@ -7,20 +7,22 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users(id, created_on, updated_at, username, balance)
-VALUES (?, DATETIME('now', 'localtime'), DATETIME('now','localtime'), ?, 50000.0) RETURNING id, created_on, updated_at, username, balance, user_token
+INSERT INTO users(id, created_on, updated_at, username, user_token , balance)
+VALUES (?, DATETIME('now', 'localtime'), DATETIME('now','localtime'), ?,?, 50000.0) RETURNING id, created_on, updated_at, username, balance, user_token
 `
 
 type CreateUserParams struct {
-	ID       interface{}
-	Username string
+	ID        interface{}
+	Username  string
+	UserToken sql.NullString
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.ID, arg.Username)
+	row := q.db.QueryRowContext(ctx, createUser, arg.ID, arg.Username, arg.UserToken)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -49,4 +51,38 @@ func (q *Queries) GetUser(ctx context.Context, id interface{}) (User, error) {
 		&i.UserToken,
 	)
 	return i, err
+}
+
+const getUserWithUsername = `-- name: GetUserWithUsername :many
+SELECT id, created_on, updated_at, username, balance, user_token FROM users WHERE username= ?
+`
+
+func (q *Queries) GetUserWithUsername(ctx context.Context, username string) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUserWithUsername, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedOn,
+			&i.UpdatedAt,
+			&i.Username,
+			&i.Balance,
+			&i.UserToken,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
